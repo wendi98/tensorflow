@@ -103,6 +103,9 @@ DebugOptions DefaultDebugOptionsIgnoringFlags() {
   opts.set_xla_cpu_use_fusion_emitters(true);
   opts.set_xla_cpu_use_thunk_runtime(true);
   opts.set_xla_cpu_use_xnnpack(false);
+  opts.set_xla_cpu_enable_xnnpack(false);  // For softmax
+  opts.set_xla_cpu_use_kernel_selector(false);
+  opts.set_xla_compile_batch_sizes("");
   opts.set_xla_cpu_experimental_xnn_graph_fusion_mode(
       DebugOptions::XNN_GRAPH_FUSION_MODE_DISABLED);
   opts.set_xla_cpu_parallel_codegen_split_count(32);
@@ -995,6 +998,16 @@ void MakeDebugOptionsFlags(std::vector<tsl::Flag>* flag_list,
                 debug_options->xla_cpu_use_xnnpack(),
                 "Use XNNPACK for supported operations."));
   flag_list->push_back(tsl::Flag(
+      "xla_cpu_enable_xnnpack",
+      bool_setter_for(&DebugOptions::set_xla_cpu_enable_xnnpack),
+      debug_options->xla_cpu_enable_xnnpack(),
+      "Enable XNNPACK ops rewriter."));
+  flag_list->push_back(tsl::Flag(
+      "xla_cpu_use_kernel_selector",
+      bool_setter_for(&DebugOptions::set_xla_cpu_use_kernel_selector),
+      debug_options->xla_cpu_use_kernel_selector() ,
+      "Replace dot with custom call to libraries."));
+  flag_list->push_back(tsl::Flag(
       "xla_cpu_experimental_xnn_graph_fusion_mode",
       setter_for_xla_cpu_experimental_xnn_graph_fusion_mode,
       DebugOptions::XnnGraphFusionMode_Name(
@@ -1003,6 +1016,15 @@ void MakeDebugOptionsFlags(std::vector<tsl::Flag>* flag_list,
       "`XNN_GRAPH_FUSION_MODE_DISABLED` - default value, "
       "`XNN_GRAPH_FUSION_MODE_GREEDY` - greedy extraction of "
       "XNNPACK-compatible subgraphs starting from root instructions."));
+  flag_list->push_back(tsl::Flag(
+      "xla_compile_batch_sizes",
+      string_setter_for(
+          &DebugOptions::set_xla_compile_batch_sizes),
+      debug_options->xla_compile_batch_sizes(),
+      "Comma-separated list of batch sizes to use for compilation, "
+      "use single value or start:end:step format. "
+      "e.g. 32, 64, 128, 10:100:10, "
+      "empty to use the nearest power of two."));
   flag_list->push_back(tsl::Flag(
       "xla_cpu_parallel_codegen_split_count",
       int32_setter_for(&DebugOptions::set_xla_cpu_parallel_codegen_split_count),
